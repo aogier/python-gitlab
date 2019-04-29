@@ -167,3 +167,29 @@ class GitlabConfigParser(object):
         if self.per_page is not None and not 0 <= self.per_page <= 100:
             raise GitlabDataError("Unsupported per_page number: %s" %
                                   self.per_page)
+
+
+class GitlabConfigEnv(object):
+    def __init__(self, gitlab_id=None, config_files=None):
+
+        #TODO: exceptions
+        self.url = os.environ.get('GITLAB_CLI_URL')
+
+        # 0/1
+        self.ssl_verify = bool(os.environ.get('GITLAB_CLI_SSL_VERIFY', True))
+
+        self.timeout = int(os.environ.get('GITLAB_CLI_TIMEOUT', 60))
+
+        self.private_token = os.environ.get('GITLAB_CLI_PRIVATE_TOKEN')
+        self.oauth_token = os.environ.get('GITLAB_CLI_OAUTH_TOKEN')
+
+        self.http_username = os.environ.get('GITLAB_CLI_HTTP_USERNAME')
+        self.http_password = os.environ.get('GITLAB_CLI_HTTP_PASSWORD')
+
+        self.api_version = os.environ.get('GITLAB_CLI_API_VERSION', '4')
+
+        if self.api_version not in ('4',):
+            raise GitlabDataError("Unsupported API version: %s" %
+                                  self.api_version)
+
+        self.per_page = os.environ.get('GITLAB_CLI_PER_PAGE', None)

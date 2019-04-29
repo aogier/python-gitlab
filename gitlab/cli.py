@@ -107,6 +107,9 @@ def _get_base_parser(add_help=True):
                         help=("Fields to display in the output (comma "
                               "separated). Not used with legacy output"),
                         required=False)
+    parser.add_argument("-e", "--env",
+                        help="Use environment variables",
+                        action="store_true")
 
     return parser
 
@@ -142,10 +145,13 @@ def main():
     # any subparser setup
     (options, args) = parser.parse_known_args(sys.argv)
     try:
-        config = gitlab.config.GitlabConfigParser(
-            options.gitlab,
-            options.config_file
-        )
+        if options.env:
+            config = gitlab.config.GitlabConfigEnv()
+        else:
+            config = gitlab.config.GitlabConfigParser(
+                options.gitlab,
+                options.config_file
+            )
     except gitlab.config.ConfigError as e:
         if "--help" in sys.argv or "-h" in sys.argv:
             parser.print_help()
@@ -176,7 +182,16 @@ def main():
     args = {k: _parse_value(v) for k, v in args.items() if v is not None}
 
     try:
-        gl = gitlab.Gitlab.from_config(gitlab_id, config_files)
+        if options.env:
+            gl = gitlab.Gitlab(config.url, private_token=config.private_token,
+                               oauth_token=config.oauth_token,
+                               ssl_verify=config.ssl_verify, timeout=config.timeout,
+                               http_username=config.http_username,
+                               http_password=config.http_password,
+                               api_version=config.api_version,
+                               per_page=config.per_page)
+        else:
+            gl = gitlab.Gitlab.from_config(gitlab_id, config_files)
         if gl.private_token or gl.oauth_token:
             gl.auth()
     except Exception as e:
